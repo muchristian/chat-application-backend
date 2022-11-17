@@ -40,3 +40,8 @@ export const getChatRoomOfUsers = async (req, res) => {
     });
   }
 };
+
+export const bulkDeleteChatRooms = async (req, res) => {
+  console.log("delete");
+  await ChatRoom.deleteMany();
+};

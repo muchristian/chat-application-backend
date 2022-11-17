@@ -1,11 +1,22 @@
 import express from "express";
 
-import { createUser, getAllUsers, getUser } from "../controllers/user.js";
+import {
+  register,
+  getAllUsers,
+  getUser,
+  bulkDeleteUsers,
+  refreshToken,
+  login,
+} from "../controllers/user.js";
+import { access, refresh } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/", getAllUsers);
-router.get("/:userId", getUser);
-router.post("/", createUser);
+router.get("/", access, getAllUsers);
+router.get("/:userId", access, getUser);
+router.post("/register", register);
+router.post("/login", login);
+router.delete("/delete-all", bulkDeleteUsers);
+router.get("/refresh-token", refresh, refreshToken);
 
 export default router;

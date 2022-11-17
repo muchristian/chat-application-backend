@@ -5,15 +5,17 @@ import { Server } from "socket.io";
 
 import "./config/mongo.js";
 
-// import { VerifyToken, VerifySocketToken } from "./middlewares/VerifyToken.js";
+import { VerifySocketToken } from "./middlewares/VerifyToken.js";
 import chatRoomRoutes from "./routes/chatRoom.js";
 import chatMessageRoutes from "./routes/chatMessage.js";
 import userRoutes from "./routes/user.js";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
 dotenv.config();
 
+app.use(cookieParser());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -37,7 +39,7 @@ const io = new Server(server, {
   },
 });
 
-// io.use(VerifySocketToken);
+io.use(VerifySocketToken);
 
 global.onlineUsers = new Map();
 
@@ -51,7 +53,9 @@ io.on("connection", (socket) => {
   global.chatSocket = socket;
 
   socket.on("addUser", (userId) => {
+    console.log(userId);
     onlineUsers.set(userId, socket.id);
+    console.log(onlineUsers);
     socket.emit("getUsers", Array.from(onlineUsers));
   });
 

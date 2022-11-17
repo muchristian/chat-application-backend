@@ -25,3 +25,8 @@ export const getMessages = async (req, res) => {
     });
   }
 };
+
+export const bulkDeleteChatMessages = async (req, res) => {
+  console.log("delete");
+  await ChatMessage.deleteMany();
+};

@@ -1,5 +1,8 @@
 import auth from "../config/firebase-config.js";
 import User from "../models/User.js";
+import { comparePassword, hashPassword } from "../util/bcrypt.js";
+import { generateToken } from "../util/jwt.js";
+import _ from "lodash";
 
 export const getAllUsers = async (req, res) => {
   const maxResults = 10;
@@ -21,7 +24,7 @@ export const getAllUsers = async (req, res) => {
         username: username[0] ? username[0].username : null,
       });
     });
-    res.status(200).json(users);
+    return res.status(200).json(users);
   } catch (error) {
     console.log(error);
   }
@@ -31,22 +34,45 @@ export const getUser = async (req, res) => {
   try {
     const userRecord = await auth.getUser(req.params.userId);
 
-    const { uid, email, displayName, photoURL } = userRecord;
+    const usernm = await User.findOne({ email: userRecord.email }).exec();
+    console.log(usernm["username"]);
+    const result = {
+      ...userRecord,
+      username:
+        usernm["username"] !== null ? usernm["username"] : userRecord["email"],
+    };
 
-    res.status(200).json({ uid, email, displayName, photoURL });
+    const { uid, email, displayName, photoURL, username } = result;
+
+    return res
+      .status(200)
+      .json({ uid, email, displayName, photoURL, username });
   } catch (error) {
     console.log(error);
   }
 };
 
-export const createUser = async (req, res) => {
-  const findUser = await User.findOne().exec();
+export const bulkDeleteUsers = async (req, res) => {
+  console.log("delete");
+  await User.deleteMany();
+};
+
+export const register = async (req, res) => {
+  const { email, password } = req.body;
+  const findUser = await User.findOne({
+    email,
+  }).exec();
   if (findUser) {
-    res.status(201).json({ message: "User with this username already exist" });
+    return res
+      .status(201)
+      .json({ message: "User with this email already exist" });
   }
+  const hashedPassword = await hashPassword(password);
   const newUser = new User({
-    username: req.body.username,
-    email: req.body.email,
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
+    email,
+    password: hashedPassword,
   });
   try {
     await newUser.save();
@@ -54,8 +80,85 @@ export const createUser = async (req, res) => {
       .status(201)
       .json({ message: "New user have been created", data: newUser });
   } catch (error) {
+    console.log(error);
     return res.status(409).json({
       message: error.message,
     });
   }
+};
+
+export const login = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const findUser = await User.findOne({
+      email,
+    }).exec();
+    if (!findUser) {
+      return res
+        .status(201)
+        .json({ message: "Email or password are incorrect" });
+    }
+    if (!(await comparePassword(password, findUser.password))) {
+      return res
+        .status(201)
+        .json({ message: "Email or password are incorrect" });
+    }
+
+    const accessToken = generateToken({
+      id: findUser._id,
+      ..._.pick(findUser, ["firstname", "lastname", "email"]),
+    });
+
+    const refreshToken = generateToken(
+      {
+        id: findUser._id,
+        ..._.pick(findUser, ["firstname", "lastname", "email"]),
+      },
+      "1y"
+    );
+
+    await User.updateOne(
+      { _id: findUser._id },
+      {
+        refreshToken,
+      }
+    );
+
+    res.cookie("accessToken", accessToken, { httpOnly: true });
+    res.cookie("refreshToken", refreshToken, { httpOnly: true });
+
+    return res.status(200).json({
+      message: "You've logged in successfully",
+      data: findUser,
+      token: refreshToken,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(409).json({
+      message: error.message,
+    });
+  }
+};
+
+export const refreshToken = (req, res) => {
+  const { _id } = req.user;
+  const accessToken = generateToken({
+    id: _id,
+    ..._.pick(req.user, ["firstName", "lastName", "email"]),
+  });
+  req.cookie("accessToken", accessToken, { httpOnly: true });
+  return res.status(200).json({
+    message: "Access token has been refreshed successfully",
+    data: undefined,
+    token: accessToken,
+  });
+};
+
+export const logout = async (req, res) => {
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+  return res.status(200).json({
+    message: "logged out",
+  });
 };
