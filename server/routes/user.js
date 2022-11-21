@@ -8,7 +8,7 @@ import {
   refreshToken,
   login,
 } from "../controllers/user.js";
-import { access, refresh } from "../middleware/auth.js";
+import { access, refresh } from "../middlewares/auth.js";
 
 const router = express.Router();
 

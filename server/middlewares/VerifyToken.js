@@ -1,10 +1,10 @@
-import * as jwt from "../util/jwt";
+import { verifyToken } from "../util/jwt.js";
 
 export const VerifyToken = async (req, res, next) => {
   const token = req.headers.authorization.split(" ")[1];
 
   try {
-    const decodeValue = jwt.verifyToken(token);
+    const decodeValue = verifyToken(token);
     if (decodeValue) {
       req.user = decodeValue;
       return next();
@@ -15,10 +15,11 @@ export const VerifyToken = async (req, res, next) => {
 };
 
 export const VerifySocketToken = async (socket, next) => {
+  // {'gggg','ghhgh'}
   const token = socket.handshake.auth.token;
 
   try {
-    const decodeValue = jwt.verifyToken(token);
+    const decodeValue = verifyToken(token);
 
     if (decodeValue) {
       socket.user = decodeValue;
