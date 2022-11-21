@@ -24,21 +24,9 @@ app.use(express.urlencoded({ extended: false }));
 
 const PORT = process.env.PORT || 8080;
 
-// app.use("/api/room", chatRoomRoutes);
-// app.use("/api/message", chatMessageRoutes);
-// app.use("/api/user", userRoutes);
-
-app.get("/", (req, res) => {
-  res.json({
-    message: "hello world",
-  });
-});
-
-app.get("/api", (req, res) => {
-  res.json({
-    message: "apis",
-  });
-});
+app.use("/api/room", chatRoomRoutes);
+app.use("/api/message", chatMessageRoutes);
+app.use("/api/user", userRoutes);
 
 const server = app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
