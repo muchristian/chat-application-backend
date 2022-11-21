@@ -1,10 +1,10 @@
-import auth from "../config/firebase-config.js";
+import * as jwt from "../util/jwt";
 
 export const VerifyToken = async (req, res, next) => {
   const token = req.headers.authorization.split(" ")[1];
 
   try {
-    const decodeValue = await auth.verifyIdToken(token);
+    const decodeValue = jwt.verifyToken(token);
     if (decodeValue) {
       req.user = decodeValue;
       return next();
@@ -18,7 +18,7 @@ export const VerifySocketToken = async (socket, next) => {
   const token = socket.handshake.auth.token;
 
   try {
-    const decodeValue = await auth.verifyIdToken(token);
+    const decodeValue = jwt.verifyToken(token);
 
     if (decodeValue) {
       socket.user = decodeValue;

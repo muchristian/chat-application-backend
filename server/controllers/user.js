@@ -1,4 +1,3 @@
-import auth from "../config/firebase-config.js";
 import User from "../models/User.js";
 import { comparePassword, hashPassword } from "../util/bcrypt.js";
 import { generateToken } from "../util/jwt.js";
@@ -9,7 +8,6 @@ export const getAllUsers = async (req, res) => {
   let users = [];
 
   try {
-    const userRecords = await auth.listUsers(maxResults);
     const findAll = await User.find({});
     console.log(findAll);
     userRecords.users.forEach((user) => {
@@ -32,8 +30,6 @@ export const getAllUsers = async (req, res) => {
 
 export const getUser = async (req, res) => {
   try {
-    const userRecord = await auth.getUser(req.params.userId);
-
     const usernm = await User.findOne({ email: userRecord.email }).exec();
     console.log(usernm["username"]);
     const result = {
